@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Marquee Verification Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/@inkline/inkline/dist/inkline.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@inkline/inkline/dist/inkline.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <style media="screen">
+      body {
+          background-color: #fcfcfc
+      }
+
+      hr {
+        padding: 0;
+        margin: 0;
+      }
+      .marquee-preview {
+        border: 3px solid #e0e0e0;
+        padding: 1em;
+        min-height: 130px;
+        border-radius: 5px;
+        background-color: white;
+        text-transform: uppercase;
+        font-weight: bolder;
+        max-width: 220px;
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden;
+        font-family: Helvetica Neue,sans-serif;
+        font-size: 100%;
+      }
+      .marquee-line {
+        display: contents;
+      }
+      .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        //justify-content: center;
+        align-items: center;
+      }
+
+      .flex-container > div {
+        background-color: #f1f1f1;
+        width: 50px;
+        margin: 5px;
+        padding: 4px;
+        text-align: center;
+        border-radius: 5px;
+        transition: margin 0.25s, background-color 0.25s;
+      }
+
+      * {
+        transition: font-size 0.25s, margin 0.25s;
+      }
+
+      .bgred {
+        background-color: red !important;
+      }
+
+      .italic {
+          font-style: italic;
+          font-weight: normal !important;
+      }
+
+      #app {
+          max-width: 1280px;
+          margin-left: auto;
+          margin-right: auto;
+          background-color: white;
+          box-shadow: 0px 0px 25px #bbbbbb;
+          padding-bottom: 2em;
+          overflow: hidden;
+      }
+
+      @media screen and (max-width: 850px) {
+        .flex-container > div {
+          width: 45px;
+          margin: 3px;
+        }
+
+        h4 {
+          font-size: 18px;
+        }
+      }
+
+      @media screen and (max-width: 800px) {
+        h4 {
+          margin-top: 20px;
+        }
+      }
+
+      @media screen and (max-width: 991px) {
+        body {
+          background-color: white;
+        }
+
+        #app {
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="_margin-top-lg-2 _margin-top-xl-3">
+      <i-form>
+        <i-container fluid>
+            <i-row>
+              <i-column>
+                <h4>Editor Options</h4>
+              </i-column>
+              <i-column>
+                <h4 style="text-align: right; font-size: smaller">Version: 1.0.0</h4>
+              </i-column>
+            </i-row>
+            <i-row>
+              <i-column>
+                <i-button v-on:click="toggleMirrorMode">Mirror Mode: {{editorOpts.mirrorMode ? "Enabled" : "Disabled"}}</i-button>
+              </i-column>
+            </i-row>
+            <i-row>
+              <i-column md=8 xl=9 class="_margin-x-auto">
+                <i-row>
+                  <template v-if="editorOpts.mirrorMode">
+                    <i-column xs="12" sm="6" class="_margin-x-auto">
+                      <h4>Editor</h4>
+                      <marquee-side-editable :form="firstForm"></marquee-side-editable>
+                    </i-column>
+                  </template>
+                  <template v-else>
+                    <i-column xs="12" sm="6" v-for="form in forms">
+                      <h4>{{form.info.name}}</h4>
+                      <marquee-side-editable :form="form"></marquee-side-editable>
+                    </i-column>
+                  </template>
+                </i-row>
+                <h4 v-show="!editorOpts.mirrorMode">Preview</h4>
+                <i-row>
+                  <template v-if="editorOpts.mirrorMode">
+                    <i-column xs="12" sm="6" class="_margin-x-auto">
+                      <h4>Preview</h4>
+                      <marquee-side :form="firstForm"></marquee-side>
+                    </i-column>
+                  </template>
+                  <template v-else>
+                    <i-column xs="12" sm="6" v-for="form in forms">
+                      <marquee-side :form="form"></marquee-side>
+                    </i-column>
+                  </template>
+                </i-row>
+              </i-column>
+              <i-column md=4 xl=3>
+                <div class="flex-container _margin-top-md-2 _margin-top-lg-2 _margin-top-xl-2">
+                  <div v-for="(count, char) in remaining" v-bind:class="{ bgred: (count.count < 0) }">
+                    <span style="float: left">{{char}}</span><span style="float: right; font-weight: bold" v-bind:class="{ italic: (count.isAlias) }">{{count.count}}</span>
+                  </div>
+                </div>
+              </i-column>
+            </i-row>
+        </i-container>
+      </i-form>
+    </div>
+
+    <script type="text/javascript">
+      Vue.use(Inkline)
+      Vue.component('marquee-side-editable', {
+        props: ['form'],
+        template: `
+          <i-form v-model=\"form.state\">
+            <i-form-group v-for=\"line in form.state.fields\">
+              <i-input size=sm :schema="form.state[line]" placeholder="" />
+            </i-form-group>
+          </i-form>
+        `
+      })
+      Vue.component('marquee-side', {
+        props: ['form'],
+        template: `
+          <pre style=\"text-align: center; white-space: pre-wrap\" class=\"marquee-preview\"><span class='marquee-line' v-for=\"line in form.state.fields\">{{form.state[line].value}}<br><hr></span></pre>
+        `
+      })
+
+      var letterSets = {
+        churchonmain: {
+          sides: {
+            "Methodist": {
+              name: "Methodist Church Side",
+              width: 92,
+              lines: 4
+            },
+            "School": {
+              name: "High School Side",
+              width: 92,
+              lines: 4
+            }
+          },
+          characters: {
+            "0": {
+              alias: "O"
+            },
+            "1": {
+              alias: "I"
+            },
+            "2": {
+              count: 12,
+              width: 5.25
+            },
+            "3": {
+              count: 6,
+              width: 5.5
+            },
+            "4": {
+              count: 6,
+              width: 6.625
+            },
+            "5": {
+              count: 6,
+              width: 5.5
+            },
+            "6": {
+              count: 12,
+              width: 5.75
+            },
+            "7": {
+              count: 22,
+              width: 5.75
+            },
+            "8": {
+              count: 6,
+              width: 6
+            },
+            "9": {
+              count: 6,
+              width: 6
+            },
+            "&": {
+              count: 3,
+              altCount: 5,
+              width: 6.625
+            },
+            "-": {
+              count: 18, // This is the non filled variant; There are no filled versions
+              width: 4
+            },
+            ",": {
+              count: 10, // This is the non filled variant; There are no filled versions
+              width: 3.5
+            },
+            "\'": {
+              alias: ","
+            },
+            "¢": {
+              count: 4,
+              width: 4.25
+            },
+            "$": {
+              count: 4,
+              width: 4.25
+            },
+            "!": {
+              count: 4,
+              width: 3.75
+            },
+            ".": {
+              count: 5, // +1 that has a defect
+              width: 2.75
+            },
+            ":": {
+              count: 3,
+              altCount: 6, // Non filled version
+              width: 3.25
+            },
+            "?": {
+              count: 6,
+              width: 5.375
+            },
+            "\/": {
+              count: 4,
+              width: 6.75
+            },
+            "@": {
+              count: 6,
+              width: 6.5
+            },
+            "\"": {
+              count: 6, // There are actually 3 pairs of left and right quotes
+              width: 5.75
+            },
+            "A": {
+              count: 18,
+              width: 6.5
+            },
+            "B": {
+              count: 8,
+              width: 6.5
+            },
+            "C": {
+              count: 13,
+              width: 5.875
+            },
+            "D": {
+              count: 13,
+              width: 6.25
+            },
+            "E": {
+              count: 29,
+              width: 5.625
+            },
+            "F": {
+              count: 20,
+              width: 5.5
+            },
+            "G": {
+              count: 13,
+              width: 6.25
+            },
+            "H": {
+              count: 13,
+              width: 6.375
+            },
+            "I": {
+              count: 19,
+              width: 3.75
+            },
+            "J": {
+              count: 14,
+              width: 6.25
+            },
+            "K": {
+              count: 15,
+              width: 6.625
+            },
+            "L": {
+              count: 15,
+              width: 5.875
+            },
+            "M": {
+              count: 12,
+              width: 8
+            },
+            "N": {
+              count: 16,
+              width: 6.5
+            },
+            "O": {
+              count: 16,
+              altCount: 4,
+              width: 7
+            },
+            "P": {
+              count: 21,
+              width: 6.25
+            },
+            "Q": {
+              count: 4,
+              width: 7.25
+            },
+            "R": {
+              count: 20,
+              width: 6.75
+            },
+            "S": {
+              count: 13,
+              width: 5.75
+            },
+            "T": {
+              count: 15,
+              width: 5.75
+            },
+            "U": {
+              count: 12,
+              width: 6.875
+            },
+            "V": {
+              count: 6,
+              width: 6.25
+            },
+            "W": {
+              count: 12,
+              width: 8
+            },
+            "X": {
+              count: 4,
+              width: 6.75
+            },
+            "Y": {
+              count: 12,
+              width: 6.875
+            },
+            "Z": {
+              count: 3,
+              altCount: 2, // These are 7's that were converted into z's
+              width: 5.75
+            },
+            " ": {
+              count: 999,
+              width: 2.75
+            },
+          }
+        }
+      }
+
+      // No need to keep this in the vue instance
+      let marquee = letterSets["churchonmain"]
+
+      var app = new Vue({
+        el: '#app',
+        data: function() {
+          var data = {
+            globalState: {characters: {}},
+            lineState: {},
+            forms: {},
+            editorOpts: {
+              mirrorMode: false
+            },
+            firstForm: null,
+          }
+
+          for (let side in marquee.sides){
+            data.forms[side] = {state: null, info: {name: marquee.sides[side].name}}
+            data.forms[side].state = this.$inkline.form(this.initFormObject(marquee.sides[side]));
+
+            if (data.firstForm == null) {
+              data.firstForm = data.forms[side]
+            }
+          }
+          return data;
+        },
+        computed: {
+          remaining: function(){
+            var remaining = {}
+
+            // Loop over all valid characters
+            for (let char in marquee.characters){
+              if(char != " "){
+                if(!(remaining[char])) {
+                  remaining[char] = {count: 0, isAlias: false}
+                }
+
+                var readChar = char
+                var charDef = marquee.characters[char]
+
+                if (charDef.alias){ // If the character is an alias
+                  // Replace the global state key with the real character
+                  readChar = charDef.alias
+                  charDef = marquee.characters[charDef.alias]
+                  remaining[char].isAlias = true
+                }
+
+                // If we have usage data for the current character
+                if (this.globalState.characters[readChar]){
+                  // Count how many are left
+
+                  // We use the alias char here so that it's count will mirror the linked char
+                  remaining[char].count = (charDef.count - this.globalState.characters[readChar].count)
+                } else {
+
+                  // Or lazy init the count
+                  remaining[char].count = charDef.count
+                }
+              }
+            }
+            return remaining
+          }
+        },
+        methods: {
+          toggleMirrorMode: function(){
+            // Set the new state
+            this.editorOpts.mirrorMode = !this.editorOpts.mirrorMode
+
+            // Clear the value of the ignored forms
+            for(let formKey in this.forms){
+              let formObj = this.forms[formKey]
+              if(formObj.info.name !== this.firstForm.info.name){
+                for (let fieldIndex in formObj.state.fields){
+                  let fieldKey = formObj.state.fields[fieldIndex]
+                  formObj.state[fieldKey].value = ""
+                }
+              }
+            }
+
+            // Force validate the state
+            this.validateLines()
+          },
+          getCharacterLink: function(charDef){
+            if (charDef && charDef.alias) { // If the character is valid
+              // If it's an alias, replace with the linked char
+              return marquee.characters[charDef.alias]
+            }
+            return undefined
+          },
+          initFormObject: function(marqueeSide){
+            var data = {}
+            for (let i = 0; i < marqueeSide.lines; i++) {
+              data["line" + i] = {
+                value: "",
+                validators: [
+                  { rule: 'custom', message: "Line has an invalid character", validator: (v) => this.isValidLineChars(v.toUpperCase())},
+                  { rule: 'custom', message: "Line is too long", validator: (v) => this.isValidLineLength(v.toUpperCase(), marqueeSide.width)},
+                  { rule: 'custom', message: "", validator: (v) => this.validateLines()},
+                ]
+              }
+            }
+            return data;
+          },
+          isValidLineLength: function(value, maxLineLength){
+            var lineLength = 0
+            for(let char in value){
+              var charDef = this.getCharacterLink(marquee.characters[value[char]]) || marquee.characters[value[char]]
+              if (charDef){
+                // Add the line length
+                lineLength += charDef.width
+              }
+              // Return as soon as the length exceeds the max
+              if (lineLength > maxLineLength){
+                return false
+              }
+            }
+
+            // Otherwise give the all clear
+            return true
+          },
+          isValidLineChars: function(value){
+            for(let char in value){
+              // If character is not undefined
+              if (!(marquee.characters[value[char]])){
+                return false
+              }
+            }
+            // Then return true
+            return true
+          },
+          validateLines: function(){
+            console.log("Performing validation")
+
+            // First step is to read the state of the lines in each form
+            var stillValid = true;
+            let message = undefined;
+
+            // First count all the characters on each line and update lineState
+            for (let formKey in this.forms) {
+              for (fieldIndex in this.forms[formKey].state.fields) {
+                let fieldKey = this.forms[formKey].state.fields[fieldIndex]
+                let field = this.forms[formKey].state[fieldKey]
+                let lineKey = formKey + fieldKey;
+
+                // Lazy init the state for the current line
+                if (!(this.lineState[lineKey])){
+                  this.$set(this.lineState, lineKey, {characters: {}})
+                }
+
+                // Get the counts of each character
+                var chars = {}
+                for (let char of field.value.toUpperCase()){
+                  // Lazy init
+                  if (!(chars[char])){
+                    chars[char] = {count: 0}
+                  }
+
+                  // For each occurance of the character, add 1
+                  chars[char].count += (this.editorOpts.mirrorMode ? Object.keys(this.forms).length : 1)
+                }
+
+                // Store the counts to state
+                this.lineState[lineKey].characters = chars
+              }
+            }
+
+            // Reset global count
+            this.globalState.characters = {}
+
+            for (let lineKey in this.lineState){
+              // Don't confuse these vars
+              var lState = this.lineState[lineKey]
+
+              // Count all the letters and add to the global count
+              for(let char in lState.characters){
+
+                // First we handle aliased characters
+                // We replace the charDef of the alias with the def of the linked char
+                var readChar = char
+                var charDef = this.getCharacterLink(marquee.characters[char])
+
+                if(charDef){ // This means that the char is an alias
+                  readChar = marquee.characters[char].alias
+                  //charDef = marquee.characters[readChar]
+                } else {
+                  // No alias
+                  charDef = marquee.characters[char]
+                }
+
+                // Don't merge this with the above if. This one uses the result of the last one
+                if (charDef){ // If it's a valid character
+
+                  // Lazy init the global count for that char
+                  if (!(this.globalState.characters[readChar])){
+                    this.globalState.characters[readChar] = {count: 0}
+                  }
+
+                  // Add to the count
+                  this.globalState.characters[readChar].count += lState.characters[char].count
+
+                  // Ensure there are enough characters left
+                  let gCharState = this.globalState.characters[readChar]
+                  if (gCharState.count > charDef.count){
+                    stillValid = false
+                    message = "Failed at " + lineKey + " on char " + char + " by count"
+                    console.log("Failed at " + lineKey + " on char " + char + " by count")
+                  }
+                }
+              }
+            }
+
+            console.log("Validate Result: " + stillValid)
+            if (stillValid) {
+              this.validateMessage = "Valid!"
+            } else {
+              this.validateMessage = message
+            }
+
+            // This true is to avoid triggering the "invalid" state on any of the form lines
+            // We are just using the validate event. We aren't actually validating the specific line
+            return true
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
