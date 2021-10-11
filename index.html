@@ -152,6 +152,7 @@
                 </i-row>
               </i-column>
               <i-column md=4 xl=3>
+                <h4>Available Letter Tiles</h4>
                 <div class="flex-container _margin-top-md-2 _margin-top-lg-2 _margin-top-xl-2">
                   <div v-for="(count, char) in remaining" v-bind:class="{ bgred: (count.count < 0) }">
                     <span style="float: left">{{char}}</span><span style="float: right; font-weight: bold" v-bind:class="{ italic: (count.isAlias) }">{{count.count}}</span>
