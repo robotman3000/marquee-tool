@@ -7,38 +7,63 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@inkline/inkline/dist/inkline.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <style media="screen">
-      body {
-          background-color: #fcfcfc
+    <!-- Code Styles -->
+    <style media="all">
+      * {
+        transition: font-size 0.25s, margin 0.25s;
+      }
+
+      p, h1, h2, h3, h4, h5, h6 {
+        color: #1d2623;
+      }
+
+      .marquee-line {
+        display: contents;
+        overflow: hidden;
+      }
+
+      .bgred {
+        background-color: red !important;
+      }
+
+      .italic {
+        font-style: italic;
+        font-weight: normal !important;
       }
 
       hr {
         padding: 0;
         margin: 0;
       }
+
       .marquee-preview {
         border: 3px solid #e0e0e0;
         padding: 1em;
-        min-height: 130px;
+        height: 130px;
         border-radius: 5px;
         background-color: white;
         text-transform: uppercase;
         font-weight: bolder;
-        max-width: 220px;
-        margin-left: auto;
-        margin-right: auto;
+        width: 200px;
         overflow: hidden;
         font-family: Helvetica Neue,sans-serif;
         font-size: 100%;
       }
-      .marquee-line {
-        display: contents;
+
+      .spacer {
+        color: white;
       }
+    </style>
+    <style media="print">
+      header, aside, .marquee-row > .editor, .spacer {
+        display: none;
+      }
+    </style>
+    <style media="screen">
       .flex-container {
         display: flex;
         flex-wrap: wrap;
         flex-direction: row;
-        //justify-content: center;
         align-items: center;
       }
 
@@ -52,27 +77,108 @@
         transition: margin 0.25s, background-color 0.25s;
       }
 
-      * {
-        transition: font-size 0.25s, margin 0.25s;
-      }
-
-      .bgred {
-        background-color: red !important;
-      }
-
-      .italic {
-          font-style: italic;
-          font-weight: normal !important;
-      }
-
       #app {
           max-width: 1280px;
           margin-left: auto;
           margin-right: auto;
           background-color: white;
-          box-shadow: 0px 0px 25px #bbbbbb;
-          padding-bottom: 2em;
-          overflow: hidden;
+
+          display: flex;
+          flex-wrap: wrap;
+          flex-direction: row;
+      }
+
+      #version {
+        text-align: right;
+        font-size: smaller;
+        margin-top: 5px;
+        margin-bottom: 0px;
+        padding-bottom: 0.5em;
+        padding-right: 0.5em;
+        color: white;
+        width: fit-content;
+        float: right;
+      }
+
+      .marquee-row {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .marquee-row > .editor {
+        width: 100%;
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+      }
+
+      .marquee-row > .preview {
+        width: 200px;
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+      }
+
+      @media screen and (max-width: 500px) {
+        .marquee-row {
+          flex-wrap: wrap;
+        }
+
+        .marquee-row > .preview {
+          margin-top: 1em;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .spacer, #version {
+          display: none;
+        }
+
+        header img {
+          margin-left: auto;
+          margin-right: auto;
+          float: none;
+        }
+      }
+
+      main {
+        background-color: white;
+        width: 66.66%;
+        padding: 1.25em;
+      }
+
+      aside {
+        background-color: #ebe1d1;
+        width: 33.33%;
+        padding: 1.25em
+      }
+
+      header {
+        overflow: hidden;
+        padding-top: 0.75em;
+        padding-bottom: 0.75em;
+      }
+
+      header img {
+        margin-top: auto;
+        margin-bottom: auto;
+        width: auto;
+        height: 96px;
+        float: left;
+      }
+
+      header > div {
+        max-width: 1280px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      @media screen and (max-width: 1024px) {
+        main {
+          width: 100%;
+        }
+
+        aside {
+          width: 100%;
+        }
       }
 
       @media screen and (max-width: 850px) {
@@ -91,79 +197,55 @@
           margin-top: 20px;
         }
       }
-
-      @media screen and (max-width: 991px) {
-        body {
-          background-color: white;
-        }
-
-        #app {
-          box-shadow: none;
-        }
-      }
     </style>
   </head>
-  <body>
-    <div id="app" class="_margin-top-lg-2 _margin-top-xl-3">
-      <i-form>
-        <i-container fluid>
-            <i-row>
-              <i-column>
-                <h4>Editor Options</h4>
-              </i-column>
-              <i-column>
-                <h4 style="text-align: right; font-size: smaller">Version: 1.0.0</h4>
-              </i-column>
-            </i-row>
-            <i-row>
-              <i-column>
-                <i-button v-on:click="toggleMirrorMode">Mirror Mode: {{editorOpts.mirrorMode ? "Enabled" : "Disabled"}}</i-button>
-              </i-column>
-            </i-row>
-            <i-row>
-              <i-column md=8 xl=9 class="_margin-x-auto">
-                <i-row>
-                  <template v-if="editorOpts.mirrorMode">
-                    <i-column xs="12" sm="6" class="_margin-x-auto">
-                      <h4>Editor</h4>
-                      <marquee-side-editable :form="firstForm"></marquee-side-editable>
-                    </i-column>
-                  </template>
-                  <template v-else>
-                    <i-column xs="12" sm="6" v-for="form in forms">
-                      <h4>{{form.info.name}}</h4>
-                      <marquee-side-editable :form="form"></marquee-side-editable>
-                    </i-column>
-                  </template>
-                </i-row>
-                <h4 v-show="!editorOpts.mirrorMode">Preview</h4>
-                <i-row>
-                  <template v-if="editorOpts.mirrorMode">
-                    <i-column xs="12" sm="6" class="_margin-x-auto">
-                      <h4>Preview</h4>
-                      <marquee-side :form="firstForm"></marquee-side>
-                    </i-column>
-                  </template>
-                  <template v-else>
-                    <i-column xs="12" sm="6" v-for="form in forms">
-                      <marquee-side :form="form"></marquee-side>
-                    </i-column>
-                  </template>
-                </i-row>
-              </i-column>
-              <i-column md=4 xl=3>
-                <h4>Available Letter Tiles</h4>
-                <div class="flex-container _margin-top-md-2 _margin-top-lg-2 _margin-top-xl-2">
-                  <div v-for="(count, char) in remaining" v-bind:class="{ bgred: (count.count < 0) }">
-                    <span style="float: left">{{char}}</span><span style="float: right; font-weight: bold" v-bind:class="{ italic: (count.isAlias) }">{{count.count}}</span>
-                  </div>
-                </div>
-              </i-column>
-            </i-row>
-        </i-container>
-      </i-form>
-    </div>
+  <body style="background-color: #f0eeeb; min-height: 100vh;">
+    <header style="background-color: #474b48;">
+      <div>
+        <img src="./Logo_HorzWHITE.png" alt="Logo">
+        <h4 id="version">Version: 1.0.0</h4>
+      </div>
+    </header>
 
+    <div id="app" style="">
+      <main>
+        <template v-if="editorOpts.mirrorMode">
+          <span class="marquee-row">
+            <div class="editor">
+              <h4>Editor</h4>
+              <marquee-side-editable :form="firstForm"></marquee-side-editable>
+            </div>
+            <div class="preview">
+              <h4>Preview</h4>
+              <marquee-side :form="firstForm"></marquee-side>
+            </div>
+          </span>
+        </template>
+        <template v-else>
+          <span class="marquee-row" v-for="form in forms">
+            <div class="editor">
+              <h4>{{form.info.name}}</h4>
+              <marquee-side-editable :form="form"></marquee-side-editable>
+            </div>
+            <div class="preview">
+              <h4 class="spacer">.</h4>
+              <marquee-side :form="form"></marquee-side>
+            </div>
+          </span>
+        </template>
+      </main>
+      <aside>
+        <h4>Editor Options</h4>
+        <i-button v-on:click="toggleMirrorMode">Mirror Mode: {{editorOpts.mirrorMode ? "Enabled" : "Disabled"}}</i-button>
+
+        <h4>Available Letter Tiles</h4>
+        <div class="flex-container _margin-top-md-2 _margin-top-lg-2 _margin-top-xl-2">
+          <div v-for="(count, char) in remaining" v-bind:class="{ bgred: (count.count < 0) }">
+            <span style="float: left">{{char}}</span><span style="float: right; font-weight: bold" v-bind:class="{ italic: (count.isAlias) }">{{count.count}}</span>
+          </div>
+        </div>
+      </aside>
+    </div>
     <script type="text/javascript">
       Vue.use(Inkline)
       Vue.component('marquee-side-editable', {
